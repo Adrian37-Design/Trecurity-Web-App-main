@@ -58,9 +58,12 @@
                     <span>Fuel Level</span>
                     <span>{{ props.vehicle?.tracking_data?.at(0)?.fuel_level ? props.vehicle?.tracking_data?.at(0)?.fuel_level + 'L' : 'No Data' }}</span>
                 </div>
-                <div class="d-flex justify-content-between mt-1">
-                    <span>Battery Percentage</span>
+                <div class="col-md-6 mt-2">
+                    <i class="ti ti-battery-charging me-1"></i>
                     <span>{{ props.vehicle?.tracking_data?.at(0)?.battery_percentage ? props.vehicle?.tracking_data?.at(0)?.battery_percentage + '%' : 'No Data' }}</span>
+                    <span v-if="props.vehicle?.tracking_data?.at(0)?.battery_percentage" class="ms-2 text-muted">
+                        ({{ estimateBatteryVoltage(props.vehicle?.tracking_data?.at(0)?.battery_percentage) }}V)
+                    </span>
                 </div>
                 <div class="d-flex justify-content-between mt-1">
                     <span>Ignition</span>
@@ -173,6 +176,14 @@
         let mDisplay = m > 0 ? m + "m" + (s > 0 ? ", " : " ") : "";
         let sDisplay = s > 0 ? s + "s" : "";
         return yDisplay + moDisplay + dDisplay + hDisplay + mDisplay + sDisplay;
+    }
+
+    // Calculate estimated battery voltage from percentage
+    // Lead-acid battery: 12.6V = 100%, 11.8V = 0%
+    const estimateBatteryVoltage = (percentage: number): string => {
+        if (!percentage || percentage < 0) return '0.0';
+        const voltage = 11.8 + (percentage / 100) * 0.8;
+        return voltage.toFixed(1);
     }
 </script>
 

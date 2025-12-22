@@ -318,7 +318,10 @@
                 </div>
                 <div class="d-flex justify-content-between mt-1">
                     <span>Battery Percentage</span>
-                    <span>${ battery_percentage ? battery_percentage + '%' : 'No Data' }</span>
+                    <div>
+                        <i class="pi pi-building" style="color: #00bcd4; font-size: 1rem"></i>
+                        <span>${ battery_percentage ? battery_percentage + '% (' + estimateBatteryVoltage(battery_percentage) + 'V)' : 'No Data' }</span>
+                    </div>
                 </div>
                 <div class="d-flex justify-content-between mt-1">
                     <span>Ignition</span>
@@ -892,6 +895,18 @@
     onBeforeUnmount(() => {
         clearInterval(interval)
     })
+
+    onUnmounted(() => {
+        map = null;
+    })
+
+    // Calculate estimated battery voltage from percentage
+    // Lead-acid battery: 12.6V = 100%, 11.8V = 0%
+    const estimateBatteryVoltage = (percentage: number): string => {
+        if (!percentage || percentage < 0) return '0.0';
+        const voltage = 11.8 + (percentage / 100) * 0.8;
+        return voltage.toFixed(1);
+    }
 </script>
 
 <style>
