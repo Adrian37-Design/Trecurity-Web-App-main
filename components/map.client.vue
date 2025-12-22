@@ -197,17 +197,21 @@
     }
 
     const getIcon = (vehicle_type: string) => {
-        if (vehicle_type === "MOTORBIKE") return "ti ti-motorbike";
-        if (vehicle_type === "CAR") return "ti ti-car";
-        if (vehicle_type === "TRUCK") return "ti ti-truck";
-        if (vehicle_type === "TRACTOR") return "ti ti-tractor";
-        if (vehicle_type === "FORKLIFT") return "ti ti-forklift";
-        if (vehicle_type === "ESCAVATOR") return "ti ti-backhoe";
-        if (vehicle_type === "BULLDOZER") return "ti ti-bulldozer";
-        if (vehicle_type === "BUS") return "ti ti-bus";
+        if (vehicle_type === "MOTORBIKE") return "motorbike";
+        if (vehicle_type === "CAR") return "car";
+        if (vehicle_type === "TRUCK") return "truck";
+        if (vehicle_type === "TRACTOR") return "tractor";
+        if (vehicle_type === "FORKLIFT") return "forklift";
+        if (vehicle_type === "ESCAVATOR") return "backhoe";
+        if (vehicle_type === "BULLDOZER") return "bulldozer";
+        if (vehicle_type === "BUS") return "bus";
+        return "car"; // Default to car icon
     }
 
-    const getHistorySignalIcon = (signal_strength: number) => {
+    const getHistorySignalIcon = (signal_strength: number, satellites: number = 0) => {
+        // Check GPS satellites first
+        if(satellites < 4) return '<i style="color: #f59e0b;" class="ti ti-gps-off"></i><span style="color: #f59e0b;">No GPS</span>'
+        
         if(signal_strength == 0) return '<i style="color: #b32b23;" class="ti ti-cell-signal-off"></i><span style="color: #475569">Offline</span>'
         else if(signal_strength > 0 && signal_strength <= 9) return '<i style="color: #b32b23;" class="ti ti-cell-signal-2"></i><span style="color: #b32b23;">Poor</span>'
         else if(signal_strength > 9 && signal_strength <= 14) return '<i style="color: #ae510f" class="ti ti-cell-signal-3"></i><span style="color: #ae510f;">Moderate</span>'
@@ -215,8 +219,12 @@
         else if(signal_strength > 19 && signal_strength <= 30) return '<i style="color: #10b981;" class="ti ti-cell-signal-5"></i><span style="color: #10b981;">Excellent</span>'
     }
 
-    const getRealtimeSignalIcon = (signal_strength: number, diff: number) => {
+    const getRealtimeSignalIcon = (signal_strength: number, diff: number, satellites: number = 0) => {
         if(diff > 5) return '<i style="color: #b32b23;" class="ti ti-cell-signal-off"></i><span style="color: #475569">Offline</span>'
+        
+        // Check GPS satellites - if < 4, has GPRS but no GPS lock
+        if(satellites < 4) return '<i style="color: #f59e0b;" class="ti ti-gps-off"></i><span style="color: #f59e0b;">No GPS Signal</span>'
+        
         else if(signal_strength > 0 && signal_strength <= 9) return '<i style="color: #b32b23;" class="ti ti-cell-signal-2"></i><span style="color: #b32b23;">Poor</span>'
         else if(signal_strength > 9 && signal_strength <= 14) return '<i style="color: #ae510f" class="ti ti-cell-signal-3"></i><span style="color: #ae510f;">Moderate</span>'
         else if(signal_strength > 14 && signal_strength <= 19) return '<i style="color: #10b981;" class="ti ti-cell-signal-4"></i><span style="color: #10b981;">Good</span>'
@@ -273,7 +281,7 @@
                         <span title="${ is_engine_locked ? 'Engine was locked' : 'Engine is unlocked' }"><i style="color: ${ is_engine_locked ? '#ef4444' : '#22c55e' }" class="pi pi-${ is_engine_locked ? 'lock' : 'unlock' }"></i></span>
                     </span>
                     <div class="d-flex">
-                        <span class="me-1">${ operator_name ?? 'No Data' }</span>${ getHistorySignalIcon(signal_strength) ?? 'No Data' }
+                        <span class="me-1">${ operator_name ?? 'No Data' }</span>${ getHistorySignalIcon(signal_strength, satellites) ?? 'No Data' }
                     </div>
                 </div>
                 ${ user.value.approval_level === 'SUPER_ADMIN' ? `<div class="d-flex justify-content-between">
@@ -460,7 +468,7 @@
                             <span title="${ is_engine_locked ? 'Engine was locked' : 'Engine is unlocked' }"><i style="color: ${ is_engine_locked ? '#ef4444' : '#22c55e' }" class="pi pi-${ is_engine_locked ? 'lock' : 'unlock' }"></i></span>
                         </span>
                         <div class="d-flex">
-                            <span class="me-1">${ operator_name ?? 'No Data' }</span>${ getHistorySignalIcon(signal_strength) ?? 'No Data' }
+                            <span class="me-1">${ operator_name ?? 'No Data' }</span>${ getHistorySignalIcon(signal_strength, satellites) ?? 'No Data' }
                         </div>
                     </div>
                     ${ user.value.approval_level === 'SUPER_ADMIN' ? `<div class="d-flex justify-content-between">
@@ -618,7 +626,7 @@
                             <span title="${ is_engine_locked ? 'Engine is locked' : 'Engine is unlocked' }"><i style="color: ${ is_engine_locked ? '#ef4444' : '#22c55e' }" class="pi pi-${ is_engine_locked ? 'lock' : 'unlock' }"></i></span>
                         </span>
                         <div class="d-flex">
-                            <span class="me-1">${ operator_name ?? 'No Data' }</span>${ getRealtimeSignalIcon(signal_strength, diff) ?? 'No Data' }
+                            <span class="me-1">${ operator_name ?? 'No Data' }</span>${ getRealtimeSignalIcon(signal_strength, diff, satellites) ?? 'No Data' }
                         </div>
                     </div>
                     ${ user.value.approval_level === 'SUPER_ADMIN' ? `<div class="d-flex justify-content-between">

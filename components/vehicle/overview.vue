@@ -9,7 +9,7 @@
                             <span class="text-primary fs-5">{{ props.vehicle?.type }}</span>
                             <div class="d-flex">
                                 <span class="me-1">{{ props.vehicle?.tracking_data?.at(0)?.operator_name ?? 'No Data' }}</span>
-                                <span v-html="getRealtimeSignalIcon(props.vehicle?.tracking_data?.at(0)?.signal_strength, diff())"></span>
+                                <span v-html="getRealtimeSignalIcon(props.vehicle?.tracking_data?.at(0)?.signal_strength, diff(), props.vehicle?.tracking_data?.at(0)?.satellites)"></span>
                             </div>
                         </div>
                     </div>
@@ -147,8 +147,12 @@
     // See if vehicle is online i.e diff <= 5 minutes
     const diff = () => moment(new Date()).diff(new Date(props.vehicle?.last_seen), 'minutes')
 
-    const getRealtimeSignalIcon = (signal_strength: number, diff: number) => {
+    const getRealtimeSignalIcon = (signal_strength: number, diff: number, satellites: number = 0) => {
         if(diff > 5) return '<i style="color: #b32b23;" class="ti ti-cell-signal-off"></i><span style="color: #475569">Offline</span>'
+        
+        // Check GPS satellites - if < 4, has GPRS but no GPS lock
+        if(satellites < 4) return '<i style="color: #f59e0b;" class="ti ti-gps-off"></i><span style="color: #f59e0b;">No GPS Signal</span>'
+        
         else if(signal_strength > 0 && signal_strength <= 9) return '<i style="color: #b32b23;" class="ti ti-cell-signal-2"></i><span style="color: #b32b23;">Poor</span>'
         else if(signal_strength > 9 && signal_strength <= 14) return '<i style="color: #ae510f" class="ti ti-cell-signal-3"></i><span style="color: #ae510f;">Moderate</span>'
         else if(signal_strength > 14 && signal_strength <= 19) return '<i style="color: #10b981;" class="ti ti-cell-signal-4"></i><span style="color: #10b981;">Good</span>'
