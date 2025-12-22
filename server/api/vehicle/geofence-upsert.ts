@@ -26,10 +26,10 @@ export default defineEventHandler(async (event) => {
         const schema = Joi
             .object({
                 vehicle_id: Joi.string().required(),
-                geometry: Joi.array().items({
+                geometry: Joi.array().items(Joi.object({
                     lat: Joi.number().required(),
                     lng: Joi.number().required(),
-                }).min(3),
+                }).unknown(true)).min(3),  // Allow unknown fields, accept lng
                 route_id: Joi.string(),
                 code: Joi.valid('create', 'edit', 'delete').required(),
             })
@@ -72,16 +72,14 @@ export default defineEventHandler(async (event) => {
         }) && !await isAllowedOnEndpoint(ApprovalLevel.COMPANY_ADMIN, company_id, user_id) && !await isAllowedOnEndpoint(ApprovalLevel.SUPER_ADMIN, null, user_id)) return { data: {}, message: 'User does not have permission', success: false }
 
         // save data
-        await prisma.$transaction(async () => {
+        await prisma.$transaction(async (prisma) => {
 
             // define functions
             const deleteGeofence = () => {
                 return prisma.geofence.deleteMany({
                     where: {
                         vehicle: {
-                            some: {
-                                id: vehicle_id
-                            }
+                            id: vehicle_id
                         }
                     }
                 });
@@ -229,6 +227,9 @@ export default defineEventHandler(async (event) => {
             // save action
             createLog(code === 'create' ? 'Create Geofence' : code === 'edit' ? 'Update Geofence' : 'Delete Geofence', user_id, 'Command', `Vehicle ${vehicle.number_plate} (${vehicle.id})`);
 
+        }, {
+            maxWait: 10000, // Wait up to 10 seconds to start transaction
+            timeout: 15000, // Timeout after 15 seconds
         });
 
         return {
@@ -238,12 +239,14 @@ export default defineEventHandler(async (event) => {
         }
 
     } catch (error) {
-        console.error(error);
+        console.error('Geofence Error:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
         setResponseStatus(event, 500);
 
         return {
             data: {},
-            message: "Server Error. Please try again later",
+            message: error.message || "Server Error. Please try again later",
             success: false
         }
     }
