@@ -1,7 +1,10 @@
 <template>
     <main v-if="props?.vehicle?.tracking_data?.length > 0">
         <Button v-if="is_loading" icon="pi pi-spinner pi-spin" rounded severity="secondary" title="Sending Engine Command" disabled />
-        <Button v-else-if="get_pending_controller_commands() > 0" @click="waitingForEngineCommand()" icon="pi pi-hourglass" rounded severity="secondary" title="Waiting for the vehicle to execute commands" />
+        <div v-else-if="get_pending_engine_commands() > 0" class="d-flex gap-2">
+            <Button @click="waitingForEngineCommand()" icon="pi pi-hourglass" rounded severity="secondary" title="Waiting for the vehicle to execute commands" />
+            <Button @click="cancelPendingCommand()" icon="pi pi-times" rounded severity="danger" label="Cancel" title="Cancel pending engine command" />
+        </div>
         <Button v-else-if="!is_post_lastest_controller_command_tracking_data()" @click="waitingForNewTrackingData()" icon="pi pi-hourglass" rounded severity="secondary" title="Waiting for the vehicle to send new tracking data" />
         <Button v-else-if="is_geofence_violation() && is_engine_locked() && is_lock_engine_on_geofence_violation()" @click="forceUnLockEngine()" rounded severity="danger" icon="pi pi-lock" label="Force Unlock Engine" title="Engine is locked because of a geofence violation" />
         <Button v-else @click="toggleEngineLock()" :icon="`pi pi-${ is_engine_locked() ? 'lock' : 'lock-open' }`" rounded :severity="is_engine_locked() ? 'danger' : 'success'" :title="is_engine_locked() ? 'Engine is locked' : 'Engine is unlocked'" />
@@ -31,6 +34,14 @@
     const is_geofence_violation = () => props?.vehicle?.tracking_data?.at(0)?.geofence_violation_state === "VIOLATION"
     const is_lock_engine_on_geofence_violation = () => props?.vehicle?.lock_engine_on_geofence_violation
     const get_pending_controller_commands = () => props?.vehicle?._count?.controller_command
+    
+    // Get only pending ENGINE commands (not geofence commands)
+    const get_pending_engine_commands = () => {
+        return props?.vehicle?.controller_command?.filter(cmd => 
+            !cmd.is_executed && (cmd.code === 'ENGINE_LOCK' || cmd.code === 'ENGINE_UN_LOCK')
+        ).length || 0;
+    }
+    
     const is_post_lastest_controller_command_tracking_data = () => props?.vehicle?.controller_command?.length > 0 ? (new Date(props?.vehicle?.tracking_data?.at(0).updated_at) > new Date(props?.vehicle?.controller_command?.at(0)?.updated_at) && props?.vehicle?.controller_command?.at(0)?.is_executed) : props?.vehicle?.tracking_data?.length > 0
 
     const is_loading = ref<boolean>(false)
@@ -134,5 +145,52 @@
 
     const waitingForNewTrackingData = () => {
         toast.add({ severity: 'info', summary: 'Tracking Data', detail: "Waiting for the vehicle to send new tracking data. This might take a few minutes to action depending on the internet connectivity in the vehicle's area.", life: 15000})
+    }
+
+    const cancelPendingCommand = () => {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cancel Pending Command',
+            text: 'Are you sure you want to cancel the pending engine command?',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, cancel it',
+            cancelButtonText: 'No, keep it'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                is_loading.value = true;
+
+                try {
+                    // Get the pending ENGINE command (not geofence)
+                    const pendingCommand = props.vehicle.controller_command?.find(cmd => 
+                        !cmd.is_executed && (cmd.code === 'ENGINE_LOCK' || cmd.code === 'ENGINE_UN_LOCK')
+                    );
+                    
+                    if (!pendingCommand) {
+                        toast.add({ severity: 'warn', summary: 'No Pending Command', detail: 'No pending engine command found to cancel.', life: 5000 });
+                        return;
+                    }
+
+                    const result = await $fetch('/api/command/cancel', {
+                        method: 'DELETE',
+                        query: {
+                            command_id: pendingCommand.id,
+                            user_id: user.value.id,
+                            token: token.value
+                        }
+                    });
+
+                    if (result.success) {
+                        toast.add({ severity: 'success', summary: 'Command Cancelled', detail: result.message, life: 5000 });
+                        emit('onSendEngineCommand', true); // Refresh the vehicle data
+                    } else {
+                        toast.add({ severity: 'error', summary: 'Cancellation Failed', detail: result.message, life: 5000 });
+                    }
+                } catch (error) {
+                    toast.add({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to cancel command', life: 5000 });
+                } finally {
+                    is_loading.value = false;
+                }
+            }
+        });
     }
 </script>
