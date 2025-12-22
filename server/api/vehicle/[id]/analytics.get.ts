@@ -84,6 +84,7 @@ export default defineEventHandler(async (event) => {
                 time_to: true,
                 lat: true,
                 lon: true,
+                ignition: true,
                 updated_at: true
             },
             orderBy: {
@@ -127,6 +128,12 @@ export default defineEventHandler(async (event) => {
                         if (i?.state === 'MOVING') agg.drive_time = [...agg.drive_time, setMaximumCap(moment(i.time_to).diff(i.time_from, 'minutes'), 30)]
                         if (i?.state === 'STATIONARY') agg.park_time = [...agg.park_time, setMaximumCap(moment(i.time_to).diff(i.time_from, 'minutes'), 30)]
 
+                        // Calculate operating hours (when ignition is ON, regardless of movement)
+                        if (i?.ignition === true) {
+                            const hours = setMaximumCap(moment(i.time_to).diff(i.time_from, 'minutes'), 30);
+                            agg.operating_hours = [...agg.operating_hours, hours];
+                        }
+
                         // Calculate distance from previous point using Haversine formula
                         if (index > 0 && i?.lat && i?.lon && array[index - 1]?.lat && array[index - 1]?.lon) {
                             const distance = haversineDistance(
@@ -144,13 +151,14 @@ export default defineEventHandler(async (event) => {
                         speed: [],
                         drive_time: [],
                         drive_mileage: 0,  // Changed from array to number for total distance
-                        park_time: []
+                        park_time: [],
+                        operating_hours: []
                     })
                 }
             })
             .map(item => {
 
-                ["fuel_level", "speed", "drive_time", "park_time"].forEach(key => {
+                ["fuel_level", "speed", "drive_time", "park_time", "operating_hours"].forEach(key => {
                     item.data[key] = item.data[key].length > 0 ? getAverage(item.data[key]) : null
                 });
 

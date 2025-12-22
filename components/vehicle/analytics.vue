@@ -2,7 +2,7 @@
     <main ref="analytics_container_el">
         <div class="row">
             <div class="col-12 d-flex justify-content-center mb-3">
-                <SelectButton id="status" style="margin-right: 5px;" v-model="option" :options="['All', 'Fuel Level', 'Speed', 'Drive Time', 'Drive Mileage', 'Park Time']" :allow-empty="false" aria-labelledby="basic" />
+                <SelectButton id="status" style="margin-right: 5px;" v-model="option" :options="['All', 'Fuel Level', 'Speed', 'Drive Time', 'Drive Mileage', 'Park Time', 'Operating Hours']" :allow-empty="false" aria-labelledby="basic" />
             </div>
             <div class="col-md-9">
                 <form @submit.prevent="search" class="d-flex justify-content-center">
@@ -47,7 +47,7 @@
 
     let chart: Chart;
     let el = ref<any>();
-    const option = ref<'All' | 'Fuel Level' | 'Speed' | 'Drive Time' | 'Drive Mileage' | 'Park Time'>('All')
+    const option = ref<'All' | 'Fuel Level' | 'Speed' | 'Drive Time' | 'Drive Mileage' | 'Park Time' | 'Operating Hours'>('All')
     const date_from = ref<Date>()
     const date_to = ref<Date>()
     const chart_data = ref<any>([])
@@ -149,12 +149,26 @@
             ]
         }
 
-        if(option.value === 'All') return  [ fuel_level, speed, drive_time, drive_mileage, park_time ]
+        const operating_hours = {
+            label: 'Avg. Operating Hours',
+            data: chart_data.value.map(({ data }) => data?.operating_hours),
+            fill: option.value === 'Operating Hours',
+            tension: 0.1,
+            backgroundColor: [
+                'rgba(255, 206, 86, 0.2)' // Yellow
+            ],
+            borderColor: [
+                'rgb(255, 206, 86)' // Yellow
+            ]
+        }
+
+        if(option.value === 'All') return  [ fuel_level, speed, drive_time, drive_mileage, park_time, operating_hours ]
         else if(option.value === 'Fuel Level') return [ fuel_level ]
         else if(option.value === 'Speed') return [ speed ]
         else if(option.value === 'Drive Mileage') return [ drive_mileage ]
         else if(option.value === 'Drive Time') return [ drive_time ]
-        else return [ park_time ]
+        else if(option.value === 'Park Time') return [ park_time ]
+        else return [ operating_hours ]
     }
 
     const getSIUnit = (value: string, option: string) => {
@@ -163,6 +177,7 @@
         else if(option === 'Avg. Drive Time') return `${ value }m`
         else if(option === 'Avg. Drive Mileage') return `${ value }km`
         else if(option === 'Avg. Park Time') return `${ value }m`
+        else if(option === 'Avg. Operating Hours') return `${ value }m`
         else return "No Data"
     }
 
