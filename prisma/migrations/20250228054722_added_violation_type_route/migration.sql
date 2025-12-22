@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `violation` MODIFY `type` ENUM('GEOFENCE', 'ROUTE', 'OVERSPEED', 'DEVICE_TEMPER') NOT NULL;
