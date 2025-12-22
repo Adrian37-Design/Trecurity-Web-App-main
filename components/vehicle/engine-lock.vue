@@ -1,13 +1,29 @@
 <template>
     <main v-if="props?.vehicle?.tracking_data?.length > 0">
-        <Button v-if="is_loading" icon="pi pi-spinner pi-spin" rounded severity="secondary" title="Sending Engine Command" disabled />
-        <div v-else-if="get_pending_engine_commands() > 0" class="d-flex gap-2">
+        <!-- Show pending status with cancel button -->
+        <div v-if="get_pending_engine_commands() > 0 && !is_loading" class="d-flex gap-2">
             <Button @click="waitingForEngineCommand()" icon="pi pi-hourglass" rounded severity="secondary" title="Waiting for the vehicle to execute commands" />
             <Button @click="cancelPendingCommand()" icon="pi pi-times" rounded severity="danger" label="Cancel" title="Cancel pending engine command" />
         </div>
-        <Button v-else-if="!is_post_lastest_controller_command_tracking_data()" @click="waitingForNewTrackingData()" icon="pi pi-hourglass" rounded severity="secondary" title="Waiting for the vehicle to send new tracking data" />
-        <Button v-else-if="is_geofence_violation() && is_engine_locked() && is_lock_engine_on_geofence_violation()" @click="forceUnLockEngine()" rounded severity="danger" icon="pi pi-lock" label="Force Unlock Engine" title="Engine is locked because of a geofence violation" />
-        <Button v-else @click="toggleEngineLock()" :icon="`pi pi-${ is_engine_locked() ? 'lock' : 'lock-open' }`" rounded :severity="is_engine_locked() ? 'danger' : 'success'" :title="is_engine_locked() ? 'Engine is locked' : 'Engine is unlocked'" />
+        
+        <!-- Force unlock for geofence violation -->
+        <Button v-else-if="is_geofence_violation() && is_engine_locked() && is_lock_engine_on_geofence_violation()" 
+                @click="forceUnLockEngine()" 
+                rounded 
+                severity="danger" 
+                icon="pi pi-lock" 
+                label="Force Unlock Engine" 
+                title="Engine is locked because of a geofence violation" />
+        
+        <!-- Main engine lock/unlock button - ALWAYS AVAILABLE -->
+        <Button v-else 
+                @click="toggleEngineLock()" 
+                :icon="`pi pi-${ is_engine_locked() ? 'lock' : 'lock-open' }`" 
+                :loading="is_loading"
+                :label="get_pending_engine_commands() > 0 ? 'Override' : undefined"
+                rounded 
+                :severity="is_engine_locked() ? 'danger' : 'success'" 
+                :title="is_engine_locked() ? 'Engine is locked' : 'Engine is unlocked'" />
     </main>
 </template>
 
@@ -58,17 +74,26 @@
 
                 const result = await $fetch<{ data: Geofence, message: string, success: boolean }>('/api/command/engine', {
                     method: 'POST',
+                    timeout: 60000,  // 60 second timeout
+                    retry: 2,        // Retry up to 2 times on failure
                     body: JSON.stringify({
                         vehicle_id: props.vehicle.id,
                         code: is_engine_locked() ? 'ENGINE_UN_LOCK' : 'ENGINE_LOCK',
                         user_id: user.value.id,
                         token: token.value
-                    })
+                    }),
+                    onRequestError({ error }) {
+                        console.error('Request error:', error);
+                    },
+                    onResponseError({ response }) {
+                        console.error('Response error:', response);
+                    }
                 })
                 .catch((error) => {
+                    console.error('Fetch error:', error);
                     return {
                         data: {},
-                        message: error,
+                        message: error.message || 'Network error. Please try again.',
                         success: false
                     }
                 })
@@ -80,10 +105,11 @@
                     toast.add({ severity: 'success', summary: 'Engine Command', detail: `The engine ${ is_engine_locked() ? 'unlock' : 'lock' } command was successfully sent to the server. This might take a few minutes to action depending on the internet connectivity in the vehicle's area.`, life: 15000})
                     emit('onSendEngineCommand', true)
                 } else {
-                    if(result?.message?.toString().includes("<no response> Failed to fetch") || result?.message?.toString().includes("net::ERR")) {
+                    const errorMessage = result?.message?.toString() || '';
+                    if(errorMessage.includes("<no response> Failed to fetch") || errorMessage.includes("net::ERR")) {
                         toast.add({ severity: 'warn', summary: 'Network Error', detail: 'Bad internet connection. Please check your internet connection and try again.', life: 8000})
                     } else {
-                        toast.add({ severity: 'warn', summary: 'App Error', detail: "An internal application error has occurred. Please try to refresh your page and start again.", life: 8000})
+                        toast.add({ severity: 'warn', summary: 'App Error', detail: errorMessage || "An internal application error has occurred. Please try to refresh your page and start again.", life: 8000})
                     }
                 }
             }
@@ -180,10 +206,12 @@
                     });
 
                     if (result.success) {
-                        toast.add({ severity: 'success', summary: 'Command Cancelled', detail: result.message, life: 5000 });
+                        const successMsg = (result as any)?.message || 'Command cancelled successfully';
+                        toast.add({ severity: 'success', summary: 'Command Cancelled', detail: successMsg, life: 5000 });
                         emit('onSendEngineCommand', true); // Refresh the vehicle data
                     } else {
-                        toast.add({ severity: 'error', summary: 'Cancellation Failed', detail: result.message, life: 5000 });
+                        const errorMsg = (result as any)?.message || 'Failed to cancel command';
+                        toast.add({ severity: 'error', summary: 'Cancellation Failed', detail: errorMsg, life: 5000 });
                     }
                 } catch (error) {
                     toast.add({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to cancel command', life: 5000 });

@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
         const body = await readBody(event);
 
         // Validate input
-        const bodySchema = z.object({ 
+        const bodySchema = z.object({
             vehicle_id: z.string().cuid(),
             code: z.enum(['ENGINE_LOCK', 'ENGINE_UN_LOCK']),
             user_id: z.string().cuid(),
@@ -19,18 +19,18 @@ export default defineEventHandler(async (event) => {
         const { vehicle_id, code, user_id, token } = body;
 
         const validateBody = bodySchema.safeParse(body);
-        
+
         //Get env variables
         const JWT_APP_TOKEN_SECRET = process.env.NUXT_PUBLIC_JWT_APP_TOKEN_SECRET;
         const validateToken = await checkAppJwtToken(token, JWT_APP_TOKEN_SECRET, user_id);
 
-        if(!validateBody.success) {
+        if (!validateBody.success) {
             setResponseStatus(event, 401)
 
             return { data: {}, message: 'Input is in the wrong format', success: false }
         }
 
-        if(!validateToken.success) {
+        if (!validateToken.success) {
             setResponseStatus(event, 401)
 
             return { data: {}, message: 'Session is invalid', success: false }
@@ -46,33 +46,53 @@ export default defineEventHandler(async (event) => {
         const company_id = user.company_where_user_is_admin_id
 
         // Check if this user has access to this endpoint
-        if(!await prisma.vehicle.count({ where: {
-            AND: [
-                { id: vehicle_id },
-                { user: { some: { id: user_id } } }
-            ]
-        }}) && !await isAllowedOnEndpoint('COMPANY_ADMIN', company_id, user_id) && !await isAllowedOnEndpoint('SUPER_ADMIN', null, user_id)) return { data: {}, message: 'User does not have permission', success: false }
+        if (!await prisma.vehicle.count({
+            where: {
+                AND: [
+                    { id: vehicle_id },
+                    { user: { some: { id: user_id } } }
+                ]
+            }
+        }) && !await isAllowedOnEndpoint('COMPANY_ADMIN', company_id, user_id) && !await isAllowedOnEndpoint('SUPER_ADMIN', null, user_id)) return { data: {}, message: 'User does not have permission', success: false }
 
-        // Add the geofence command
-        await prisma.controllerCommand.create({
-            data: {
-                code,
-                vehicle: {
-                    connect: {
-                        id: vehicle_id
-                    }
-                },
-                user: {
-                    connect: {
-                        id: user_id
+        // Add the engine command with override logic
+        await prisma.$transaction(async (tx) => {
+            // Delete any pending (not executed) engine commands for this vehicle
+            // This allows users to override/change their command
+            await tx.controllerCommand.deleteMany({
+                where: {
+                    vehicle_id,
+                    is_executed: false,
+                    code: {
+                        in: ['ENGINE_LOCK', 'ENGINE_UN_LOCK']
                     }
                 }
-            }
-        })
+            });
+
+            // Create the new command
+            await tx.controllerCommand.create({
+                data: {
+                    code,
+                    vehicle: {
+                        connect: {
+                            id: vehicle_id
+                        }
+                    },
+                    user: {
+                        connect: {
+                            id: user_id
+                        }
+                    }
+                }
+            });
+        }, {
+            maxWait: 10000,  // Wait up to 10s to start transaction
+            timeout: 30000,  // Transaction timeout 30s
+        });
 
         return {
             data: {},
-            message: "",
+            message: "Command sent successfully",
             success: true
         }
     } catch (error) {
