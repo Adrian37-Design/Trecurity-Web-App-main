@@ -122,7 +122,7 @@
                 email: email.value,
                 phone: phone.value,
                 status: status.value,
-                two_factor_auth: two_factor_auth.value,
+                two_factor_auth: two_factor_auth.value === true,  // Ensure explicit boolean
                 update_user_id: current_data?.id,
                 approval_level: approval_level.value,
                 company_where_user_is_admin_id: approval_level.value === 'COMPANY_ADMIN' ? company_where_user_is_admin.value.id : null,
