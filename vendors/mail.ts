@@ -7,7 +7,7 @@ function getTransport() {
     // Check both NUXT_PUBLIC_ and non-prefixed versions for Vercel compatibility
     const host = process.env.NUXT_PUBLIC_SMTP_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
     const port = parseInt(process.env.NUXT_PUBLIC_SMTP_PORT || process.env.SMTP_PORT || '587');
-    const user = process.env.NUXT_PUBLIC_SMTP_USER || process.env.SMTP_USER;
+    const user = process.env.NUXT_PUBLIC_SMTP_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME;
     const pass = process.env.NUXT_PUBLIC_SMTP_PASSWORD || process.env.SMTP_PASSWORD;
 
     console.log('SMTP Config Check:', {
@@ -15,7 +15,7 @@ function getTransport() {
         port,
         hasUser: !!user,
         hasPass: !!pass,
-        userSource: process.env.NUXT_PUBLIC_SMTP_USER ? 'NUXT_PUBLIC' : process.env.SMTP_USER ? 'plain' : 'none'
+        userSource: process.env.NUXT_PUBLIC_SMTP_USER ? 'NUXT_PUBLIC' : process.env.SMTP_USER ? 'SMTP_USER' : process.env.SMTP_USERNAME ? 'SMTP_USERNAME' : 'none'
     });
 
     if (!user || !pass) {
