@@ -143,6 +143,15 @@
             isGeneratingRecaptchaToken.value = true;
 
             const { public: { RECAPTCHA_CLIENT_SITE_KEY } }: any = useRuntimeConfig();
+            
+            // Skip reCAPTCHA if key is not configured
+            if (!RECAPTCHA_CLIENT_SITE_KEY || RECAPTCHA_CLIENT_SITE_KEY === '' || RECAPTCHA_CLIENT_SITE_KEY === 'dummy-recaptcha-key') {
+                isGeneratingRecaptchaToken.value = false;
+                return {
+                    token: "",
+                    success: true
+                }
+            }
         
             return await load(RECAPTCHA_CLIENT_SITE_KEY, {
                 autoHideBadge: true
