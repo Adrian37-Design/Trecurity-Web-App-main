@@ -84,6 +84,10 @@
                         <span v-else class="text-muted">Not Set</span>
                     </span>
                 </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <span>Tracker Serial Number</span>
+                    <span>{{ (props.vehicle as any)?.tracker_serial_number || 'Not Set' }}</span>
+                </div>
                 <div v-if="props.vehicle?.tracking_data?.at(0)?.state === 'STATIONARY'" class="d-flex justify-content-between mt-1">
                     <span>From</span>
                     <span>{{ moment(props.vehicle?.tracking_data?.at(0)?.time_from).format('ddd, DD MMM, h:mm a') }}</span>

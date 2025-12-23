@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   },
 
   site: {
-    url: 'https://trecurity.com',
+    url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
     name: 'Trecurity',
     description: 'Trecurity is a vehicle tracking system.',
     defaultLocale: 'en',
@@ -60,7 +60,7 @@ export default defineNuxtConfig({
           "https://*.openstreetmap.org"
         ]
       },
-      crossOriginEmbedderPolicy: 'unsafe-none',
+      crossOriginEmbedderPolicy: process.env.NODE_ENV === 'development' ? 'unsafe-none' : 'require-corp',
       crossOriginOpenerPolicy: 'same-origin-allow-popups',
       xFrameOptions: false
     },
@@ -73,6 +73,16 @@ export default defineNuxtConfig({
   },
 
   devtools: { enabled: true },
+
+  vite: {
+    server: {
+      allowedHosts: true,  // Allow Cloudflare tunnel and other tunneling services
+      hmr: {
+        protocol: 'wss',
+        clientPort: 443
+      }
+    }
+  },
 
   runtimeConfig: {
     public: {

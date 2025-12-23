@@ -144,6 +144,7 @@ model Vehicle {
   route_id                          String?
   route                             Route?              @relation(fields: [route_id], references: [id])
   tracker_sim_phone                 String? // SIM card phone number in GPS tracker (for airtime recharge)
+  tracker_serial_number             String? // GPS tracker device serial number/IMEI
   sos_alerts                        SOSAlert[]
 
   @@map("vehicle")

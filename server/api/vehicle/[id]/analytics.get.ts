@@ -56,6 +56,12 @@ export default defineEventHandler(async (event) => {
 
         /// auth
         const company_id: string = event.context.company_id;
+
+        if (!event.context.user) {
+            setResponseStatus(event, 401);
+            return { data: {}, message: 'User not authenticated', success: false };
+        }
+
         const approvalLevel = event.context.user.approval_level;
 
         if (approvalLevel === ApprovalLevel.COMPANY_ADMIN) {

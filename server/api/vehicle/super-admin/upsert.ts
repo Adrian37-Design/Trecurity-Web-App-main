@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
         });
 
         // Destruct body
-        const { vehicle_id, number_plate, type, company, users, tracker_sim_phone, status, user_id, token } = body;
+        const { vehicle_id, number_plate, type, company, users, tracker_sim_phone, tracker_serial_number, status, user_id, token } = body;
 
         const validateBody = bodySchema.safeParse(body);
 
@@ -129,6 +129,7 @@ export default defineEventHandler(async (event) => {
                     number_plate,
                     type,
                     tracker_sim_phone: tracker_sim_phone || null,
+                    tracker_serial_number: tracker_serial_number || null,
                     status,
                     company_id: company.id,
                     user: {

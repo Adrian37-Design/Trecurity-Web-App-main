@@ -28,6 +28,11 @@ export default defineEventHandler(async (event) => {
     } as any;
 
     /// permission
+    if (!event.context.user) {
+        setResponseStatus(event, 401);
+        return { data: [], message: 'User not authenticated', success: false };
+    }
+
     const approvalLevel = event.context.user.approval_level;
     const { company_id } = event.context.user;
 
