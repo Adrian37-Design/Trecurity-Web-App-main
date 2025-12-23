@@ -40,16 +40,20 @@ export default defineEventHandler(async (event) => {
    //Desctruct body
    const { email, password, device_information, recaptcha_token } = body;
 
-   // Verify Recaptcha
+   // Verify Recaptcha (skip if not configured)
    if (process.env.NODE_ENV === 'production') {
       const RECAPTCHA_SERVER_SITE_KEY = process.env.NUXT_RECAPTCHA_SERVER_SITE_KEY;
-      const verify = await verifyGoogleRecaptcha(recaptcha_token, RECAPTCHA_SERVER_SITE_KEY);
 
-      if (!verify.success || verify.score === 0 || !verify.hostname.includes('trecurity.com')) {
-         return {
-            data: {},
-            message: "Verification Failed. Please try again later.",
-            success: false
+      // Skip reCAPTCHA if not configured or token is empty
+      if (RECAPTCHA_SERVER_SITE_KEY && recaptcha_token) {
+         const verify = await verifyGoogleRecaptcha(recaptcha_token, RECAPTCHA_SERVER_SITE_KEY);
+
+         if (!verify.success || verify.score === 0) {
+            return {
+               data: {},
+               message: "Verification Failed. Please try again later.",
+               success: false
+            }
          }
       }
    }
