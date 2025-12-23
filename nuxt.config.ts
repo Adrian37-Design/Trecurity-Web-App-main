@@ -41,7 +41,7 @@ export default defineNuxtConfig({
     }
   },
 
-  modules: ['@pinia/nuxt', 'nuxt-purgecss', '@nuxtjs/seo', 'nuxt-security', '@nuxt/image', /*'@sentry/nuxt/module' */],
+  modules: ['@pinia/nuxt', 'nuxt-purgecss', /* '@nuxtjs/seo', */ 'nuxt-security', '@nuxt/image', /*'@sentry/nuxt/module' */],
 
   security: {
     headers: {
@@ -100,4 +100,4 @@ export default defineNuxtConfig({
   // sourcemap: {
   //   client: 'hidden'
   // }
-})
+} as any)
