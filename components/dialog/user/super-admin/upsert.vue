@@ -91,6 +91,8 @@
     onMounted(async () => {
         try {
             // Get Company list
+            if (!user.value?.id) return;
+            
             const get_company_list = await $fetch('/api/company/list', {
                 method: 'POST',
                 body: JSON.stringify({
