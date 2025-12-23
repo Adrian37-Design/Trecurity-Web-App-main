@@ -57,7 +57,13 @@ export default defineNuxtConfig({
         'img-src': [
           "'self'",
           "data:",
-          "https://*.openstreetmap.org"
+          "https://*.openstreetmap.org",
+          "https://*.tile.openstreetmap.org"
+        ],
+        'connect-src': [
+          "'self'",
+          "https://*.openstreetmap.org",
+          "https://*.tile.openstreetmap.org"
         ]
       },
       crossOriginEmbedderPolicy: process.env.NODE_ENV === 'development' ? 'unsafe-none' : 'require-corp',
