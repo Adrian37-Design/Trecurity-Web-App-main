@@ -66,7 +66,7 @@ export default defineNuxtConfig({
           "https://*.tile.openstreetmap.org"
         ]
       },
-      crossOriginEmbedderPolicy: process.env.NODE_ENV === 'development' ? 'unsafe-none' : 'require-corp',
+      crossOriginEmbedderPolicy: 'unsafe-none',  // Allow loading OpenStreetMap tiles
       crossOriginOpenerPolicy: 'same-origin-allow-popups',
       xFrameOptions: false
     },
