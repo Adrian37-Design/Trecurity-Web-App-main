@@ -44,7 +44,7 @@
                 </div>
                 <div v-if="current_data" class="col-md-12 mt-4">
                     <label for="status" class="form-label">Account Status:</label>
-                    <SelectButton id="status" v-model="status" :allow-empty="false" optionLabel="name" option Value="value" :options="[{ name: 'ENABLE', value: true }, { name: 'DISABLE', value: false }]" class="float-end" aria-labelledby="basic" />
+                    <SelectButton id="status" v-model="status" :allow-empty="false" optionLabel="name" optionValue="value" :options="[{ name: 'ENABLE', value: true }, { name: 'DISABLE', value: false }]" class="float-end" aria-labelledby="basic" />
                 </div>
                 <div v-if="current_data" class="col-md-12 mt-4">
                     <div class="d-flex align-items-center gap-2">
