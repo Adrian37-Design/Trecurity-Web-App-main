@@ -4,10 +4,19 @@ import nodemailer from 'nodemailer';
 
 
 function getTransport() {
-    const host = process.env.NUXT_PUBLIC_SMTP_HOST || 'smtp.gmail.com';
-    const port = parseInt(process.env.NUXT_PUBLIC_SMTP_PORT || '587');
-    const user = process.env.NUXT_PUBLIC_SMTP_USER;
-    const pass = process.env.NUXT_PUBLIC_SMTP_PASSWORD;
+    // Check both NUXT_PUBLIC_ and non-prefixed versions for Vercel compatibility
+    const host = process.env.NUXT_PUBLIC_SMTP_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = parseInt(process.env.NUXT_PUBLIC_SMTP_PORT || process.env.SMTP_PORT || '587');
+    const user = process.env.NUXT_PUBLIC_SMTP_USER || process.env.SMTP_USER;
+    const pass = process.env.NUXT_PUBLIC_SMTP_PASSWORD || process.env.SMTP_PASSWORD;
+
+    console.log('SMTP Config Check:', {
+        host,
+        port,
+        hasUser: !!user,
+        hasPass: !!pass,
+        userSource: process.env.NUXT_PUBLIC_SMTP_USER ? 'NUXT_PUBLIC' : process.env.SMTP_USER ? 'plain' : 'none'
+    });
 
     if (!user || !pass) {
         console.warn('SMTP credentials not configured - emails will not be sent');
