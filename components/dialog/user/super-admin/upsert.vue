@@ -99,9 +99,9 @@
                     user_id: user.value.id,
                     token: token.value
                 })
-            })
+            }) as any
 
-            if(get_company_list.success) {
+            if(get_company_list?.success) {
                 company_list.value = get_company_list.data
             }
         } catch (error) {
