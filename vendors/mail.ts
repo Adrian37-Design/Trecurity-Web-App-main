@@ -2,14 +2,24 @@ import moment from "moment"
 import pLimit from "p-limit";
 import nodemailer from 'nodemailer';
 
-const transport = nodemailer.createTransport({
-    host: process.env.NUXT_PUBLIC_SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.NUXT_PUBLIC_SMTP_PORT || '587'),
-    auth: {
-        user: process.env.NUXT_PUBLIC_SMTP_USER,
-        pass: process.env.NUXT_PUBLIC_SMTP_PASSWORD,
+
+function getTransport() {
+    const host = process.env.NUXT_PUBLIC_SMTP_HOST || 'smtp.gmail.com';
+    const port = parseInt(process.env.NUXT_PUBLIC_SMTP_PORT || '587');
+    const user = process.env.NUXT_PUBLIC_SMTP_USER;
+    const pass = process.env.NUXT_PUBLIC_SMTP_PASSWORD;
+
+    if (!user || !pass) {
+        console.warn('SMTP credentials not configured - emails will not be sent');
+        return null;
     }
-});
+
+    return nodemailer.createTransport({
+        host,
+        port,
+        auth: { user, pass }
+    });
+}
 
 interface SendOpts {
     from?: String,
@@ -22,6 +32,12 @@ interface SendOpts {
 function send(opts: SendOpts): Promise<any> {
 
     const { from, to, subject, text, html } = opts;
+
+    const transport = getTransport();
+    if (!transport) {
+        console.warn(`Email not sent to ${to} - SMTP not configured`);
+        return Promise.resolve({ message: 'SMTP not configured' });
+    }
 
     return transport.sendMail({
         from: from || process.env.NUXT_PUBLIC_SMTP_FROM || `Trecurity <${process.env.NUXT_PUBLIC_SMTP_USER}>`,
