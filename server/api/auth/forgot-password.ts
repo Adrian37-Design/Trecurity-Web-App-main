@@ -3,7 +3,7 @@ import { prisma } from "~/prisma/db";
 import { z } from "zod";
 import { createLog } from "~/vendors/logs";
 
-export default defineEventHandler(async (event)=>{
+export default defineEventHandler(async (event) => {
     try {
         const body = await readBody(event);
 
@@ -31,26 +31,29 @@ export default defineEventHandler(async (event)=>{
                 open_two_factor_auth: false,
                 success: false
             }
-        } 
+        }
 
         //Get env variables
         const RECAPTCHA_SERVER_SITE_KEY = process.env.NUXT_RECAPTCHA_SERVER_SITE_KEY;
 
-        // Verify Recaptcha
-        if(process.env.NODE_ENV === 'production') {
-            const verify = await verifyGoogleRecaptcha(recaptcha_token, RECAPTCHA_SERVER_SITE_KEY);
+        // Verify Recaptcha (skip if not configured)
+        if (process.env.NODE_ENV === 'production') {
+            // Skip reCAPTCHA if not configured or token is empty
+            if (RECAPTCHA_SERVER_SITE_KEY && recaptcha_token) {
+                const verify = await verifyGoogleRecaptcha(recaptcha_token, RECAPTCHA_SERVER_SITE_KEY);
 
-            if(!verify.success || verify.score === 0 || !verify.hostname.includes('trecurity.com')) {
-                return {
-                   data: {},
-                   message: "Verification Failed. Please try again later.",
-                   success: false
+                if (!verify.success || verify.score === 0) {
+                    return {
+                        data: {},
+                        message: "Verification Failed. Please try again later.",
+                        success: false
+                    }
                 }
-            } 
+            }
         }
 
         // Check if passwords match
-        if(newPassword !== confirmNewPassword) {
+        if (newPassword !== confirmNewPassword) {
             return {
                 data: {},
                 message: 'The password and confirm password do not match',
@@ -66,20 +69,20 @@ export default defineEventHandler(async (event)=>{
                 email
             }
         })
-        .catch(error => {
-            console.error(error)
+            .catch(error => {
+                console.error(error)
 
-            return []
-        });
-  
-        if(users.length > 0){
+                return []
+            });
+
+        if (users.length > 0) {
             // Create a JWT token
             const token = await createOTPJwtToken(JWT_OTP_TOKEN_SECRET);
 
             // Create log
             createLog('Forgot Password', users?.at(0).id, 'Authentication', 'Initiated the forgot password process')
 
-            return { 
+            return {
                 data: {},
                 message: "",
                 token,
@@ -88,38 +91,38 @@ export default defineEventHandler(async (event)=>{
             }
         } else {
             const token = await createDummyJwtToken();
-            
-            return { 
+
+            return {
                 data: {},
                 message: "",
                 token,
                 open_two_factor_auth: true,
                 success: true
-            } 
+            }
         }
     } catch (error) {
         console.error(error);
         setResponseStatus(event, 500);
 
-        return { 
+        return {
             data: {},
             message: 'Server error. Please try again later',
             token: "",
             open_two_factor_auth: false,
             success: false
-        }  
+        }
     }
 });
 
 const verifyGoogleRecaptcha = async (token, server_site_key) => {
     // Hitting POST request to the URL, Google will
     // respond with success or error scenario.
-    const url = `https://www.google.com/recaptcha/api/siteverify?secret=${ server_site_key }&response=${ token }`;
-   
+    const url = `https://www.google.com/recaptcha/api/siteverify?secret=${server_site_key}&response=${token}`;
+
     // Making POST request to verify captcha
     const verify: any = await $fetch(url, {
         method: "POST"
     });
-  
+
     return verify
 }
