@@ -43,7 +43,15 @@
                     </span>
                 </div>
                 <div v-if="current_data" class="col-md-12 mt-4">
-                    <SelectButton id="status" v-model="status" :allow-empty="false" optionLabel="name" optionValue="value" :options="[{ name: 'ENABLE', value: true }, { name: 'DISABLE', value: false }]" class="float-end" aria-labelledby="basic" />
+                    <label for="status" class="form-label">Account Status:</label>
+                    <SelectButton id="status" v-model="status" :allow-empty="false" optionLabel="name" option Value="value" :options="[{ name: 'ENABLE', value: true }, { name: 'DISABLE', value: false }]" class="float-end" aria-labelledby="basic" />
+                </div>
+                <div v-if="current_data" class="col-md-12 mt-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <Checkbox v-model="two_factor_auth" inputId="two_factor_auth" :binary="true" />
+                        <label for="two_factor_auth" class="mb-0">Two Factor Authentication (Email OTP)</label>
+                    </div>
+                    <small class="text-muted d-block mt-1">When enabled, user will receive a random 6-digit OTP via email on each login.</small>
                 </div>
             </div>
             <div class="d-flex justify-content-between mt-3">
@@ -72,6 +80,7 @@
     const email = ref<string>(current_data?.email)
     const phone = ref<string>(current_data?.phone)
     const status = ref<boolean>(current_data?.status)
+    const two_factor_auth = ref<boolean>(current_data?.two_factor_auth || false)
     const approval_level = ref<ApprovalLevel>(current_data?.approval_level)
     const company_where_user_is_admin = ref<Company>(current_data?.company_where_user_is_admin)
     const company_where_user_is_customer = ref<Company>(current_data?.company_where_user_is_customer)
@@ -111,6 +120,7 @@
                 email: email.value,
                 phone: phone.value,
                 status: status.value,
+                two_factor_auth: two_factor_auth.value,
                 update_user_id: current_data?.id,
                 approval_level: approval_level.value,
                 company_where_user_is_admin_id: approval_level.value === 'COMPANY_ADMIN' ? company_where_user_is_admin.value.id : null,
