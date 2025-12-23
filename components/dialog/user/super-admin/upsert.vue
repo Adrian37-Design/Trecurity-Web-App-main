@@ -131,6 +131,8 @@
                 token: token.value 
             }
 
+            console.log('Sending 2FA value:', two_factor_auth.value, '→ Converted to:', two_factor_auth.value === true);
+
             const { message, success } = await $fetch('/api/user/super-admin/upsert', {
                 method: 'POST',
                 body: JSON.stringify(details)
