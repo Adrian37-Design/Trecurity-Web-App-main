@@ -75,6 +75,15 @@
                         <span class="p-tag-value">{{ props.vehicle?.tracking_data?.at(0)?.state }}</span>
                     </span>
                 </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <span>Tracker SIM Phone</span>
+                    <span>
+                        <a v-if="(props.vehicle as any)?.tracker_sim_phone" :href="`tel:${(props.vehicle as any).tracker_sim_phone}`" class="text-primary">
+                            {{ (props.vehicle as any).tracker_sim_phone }}
+                        </a>
+                        <span v-else class="text-muted">Not Set</span>
+                    </span>
+                </div>
                 <div v-if="props.vehicle?.tracking_data?.at(0)?.state === 'STATIONARY'" class="d-flex justify-content-between mt-1">
                     <span>From</span>
                     <span>{{ moment(props.vehicle?.tracking_data?.at(0)?.time_from).format('ddd, DD MMM, h:mm a') }}</span>

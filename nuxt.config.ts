@@ -30,8 +30,15 @@ export default defineNuxtConfig({
 
   build: {
     transpile: [
-      'primevue'
+      'primevue',
+      'xlsx'
     ]
+  },
+
+  nitro: {
+    externals: {
+      inline: ['xlsx']
+    }
   },
 
   modules: ['@pinia/nuxt', 'nuxt-purgecss', '@nuxtjs/seo', 'nuxt-security', '@nuxt/image', /*'@sentry/nuxt/module' */],

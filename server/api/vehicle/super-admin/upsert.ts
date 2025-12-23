@@ -9,41 +9,41 @@ export default defineEventHandler(async (event) => {
         const body = await readBody(event);
 
         // Validate input
-        const bodySchema = z.object({ 
-            number_plate: z.string(), 
-            type: z.string(), 
-            company: z.any(), 
+        const bodySchema = z.object({
+            number_plate: z.string(),
+            type: z.string(),
+            company: z.any(),
             users: z.any(),
             user_id: z.string().cuid(),
             token: z.string().regex(jwt_regex)
         });
 
         // Destruct body
-        const { vehicle_id, number_plate, type, company, users, status, user_id, token } = body;
+        const { vehicle_id, number_plate, type, company, users, tracker_sim_phone, status, user_id, token } = body;
 
         const validateBody = bodySchema.safeParse(body);
-        
+
         //Get env variables
         const JWT_APP_TOKEN_SECRET = process.env.NUXT_PUBLIC_JWT_APP_TOKEN_SECRET;
         const validateToken = await checkAppJwtToken(token, JWT_APP_TOKEN_SECRET, user_id);
 
-        if(!validateBody.success) {
+        if (!validateBody.success) {
             setResponseStatus(event, 401)
 
             return { data: {}, message: 'Input is in the wrong format', success: false }
         }
 
-        if(!validateToken.success) {
+        if (!validateToken.success) {
             setResponseStatus(event, 401)
 
             return { data: {}, message: 'Session is invalid', success: false }
         }
 
         // Check if this user has access to this endpoint
-        if(!await isAllowedOnEndpoint('SUPER_ADMIN', null, user_id)) return { data: {}, message: 'User does not have permission', success: false }
+        if (!await isAllowedOnEndpoint('SUPER_ADMIN', null, user_id)) return { data: {}, message: 'User does not have permission', success: false }
 
         // Create New Vehicle
-        if(!vehicle_id) {
+        if (!vehicle_id) {
             // Check if number plate already exists
             const vehicles = await prisma.vehicle.count({
                 where: {
@@ -51,13 +51,14 @@ export default defineEventHandler(async (event) => {
                 }
             })
 
-            if(vehicles > 0) return { data: {}, message: "A vehicle with this number plate already exists", success: false }
+            if (vehicles > 0) return { data: {}, message: "A vehicle with this number plate already exists", success: false }
 
             const vehicle = await prisma.vehicle.create({
                 data: {
                     number_plate,
-                    type, 
+                    type,
                     company_id: company.id,
+                    tracker_sim_phone: tracker_sim_phone || null,
                     user: {
                         connect: [
                             ...users.map(({ id }) => {
@@ -71,14 +72,14 @@ export default defineEventHandler(async (event) => {
             })
 
             // Created log
-            createLog('Create', user_id, 'Vehicle', `Created vehicle ${ vehicle.number_plate } (${ vehicle.id })`)
+            createLog('Create', user_id, 'Vehicle', `Created vehicle ${vehicle.number_plate} (${vehicle.id})`)
 
             return {
                 data: vehicle,
                 message: "",
                 success: true
             }
-        } 
+        }
         // Update Vehicle
         else {
             const vehicle = await prisma.vehicle.findUnique({
@@ -90,7 +91,7 @@ export default defineEventHandler(async (event) => {
                 }
             })
 
-            if(vehicle.number_plate !== number_plate) {
+            if (vehicle.number_plate !== number_plate) {
                 // Check if number plate already exists
                 const vehicles = await prisma.vehicle.count({
                     where: {
@@ -98,7 +99,7 @@ export default defineEventHandler(async (event) => {
                     }
                 })
 
-                if(vehicles > 0) return { data: {}, message: "A vehicle with this number plate already exists", success: false }
+                if (vehicles > 0) return { data: {}, message: "A vehicle with this number plate already exists", success: false }
             }
 
             // Disconnect all user
@@ -127,6 +128,7 @@ export default defineEventHandler(async (event) => {
                 data: {
                     number_plate,
                     type,
+                    tracker_sim_phone: tracker_sim_phone || null,
                     status,
                     company_id: company.id,
                     user: {
@@ -142,7 +144,7 @@ export default defineEventHandler(async (event) => {
             })
 
             // Created log
-            createLog('Update', user_id, 'Vehicle', `Update vehicle ${ number_plate } (${ vehicle.id })`)
+            createLog('Update', user_id, 'Vehicle', `Update vehicle ${number_plate} (${vehicle.id})`)
 
             return {
                 data: {},

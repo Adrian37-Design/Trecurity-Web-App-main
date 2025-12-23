@@ -5,15 +5,16 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
   previewFeatures = ["driverAdapters"]
-  engineType = "library"
+  engineType      = "library"
 }
 
-generator zod {
-  provider = "zod-prisma-types"
-}
+// Temporarily commented out due to generation issues
+// generator zod {
+//   provider = "zod-prisma-types"
+// }
 
 datasource db {
   provider = "sqlite"
@@ -21,30 +22,30 @@ datasource db {
 }
 
 model User {
-  id String @id @default(cuid())
-  name String
-  surname String
-  email String @unique
-  phone String
-  password String
-  approval_level ApprovalLevel @default(USER)
-  company_where_user_is_admin_id String?
-  company_where_user_is_admin Company? @relation(fields: [company_where_user_is_admin_id], references: [id]) 
+  id                                String              @id @default(cuid())
+  name                              String
+  surname                           String
+  email                             String              @unique
+  phone                             String
+  password                          String
+  approval_level                    ApprovalLevel       @default(USER)
+  company_where_user_is_admin_id    String?
+  company_where_user_is_admin       Company?            @relation(fields: [company_where_user_is_admin_id], references: [id])
   company_where_user_is_customer_id String?
-  company_where_user_is_customer Company? @relation(name: "CompanyCustomer", fields: [company_where_user_is_customer_id], references: [id]) 
-  vehicles Vehicle[]
-  controller_command ControllerCommand[]
-  status Boolean @default(true)
-  two_factor_auth Boolean @default(true)
-  login_information LoginInformation[]
-  is_locked Boolean @default(false)
-  login_failed_attempts Int @default(0)
-  last_seen_at DateTime @default(now())
-  logs Logs[]
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
-  violations Violation[]
-  sos_alerts SOSAlert[]
+  company_where_user_is_customer    Company?            @relation(name: "CompanyCustomer", fields: [company_where_user_is_customer_id], references: [id])
+  vehicles                          Vehicle[]
+  controller_command                ControllerCommand[]
+  status                            Boolean             @default(true)
+  two_factor_auth                   Boolean             @default(true)
+  login_information                 LoginInformation[]
+  is_locked                         Boolean             @default(false)
+  login_failed_attempts             Int                 @default(0)
+  last_seen_at                      DateTime            @default(now())
+  logs                              Logs[]
+  updated_at                        DateTime            @updatedAt
+  created_at                        DateTime            @default(now())
+  violations                        Violation[]
+  sos_alerts                        SOSAlert[]
 
   @@map("user")
 }
@@ -56,28 +57,28 @@ enum ApprovalLevel {
 }
 
 model OneTimePin {
-  id String @id @default(cuid())
-  email String
-  pin String
-  has_been_used Boolean @default(false)
-  failed_attempts Float @default(0)
-  expires_at DateTime
-  created_at DateTime @default(now())
+  id              String   @id @default(cuid())
+  email           String
+  pin             String
+  has_been_used   Boolean  @default(false)
+  failed_attempts Float    @default(0)
+  expires_at      DateTime
+  created_at      DateTime @default(now())
 
   @@map("one_time_pin")
 }
 
 model Violation {
-  id String @id @default(cuid())
-  type ViolationType
+  id         String        @id @default(cuid())
+  type       ViolationType
   vehicle_id String
-  vehicle Vehicle @relation(fields: [vehicle_id], references: [id])
-  user_id String
-  user User @relation(fields: [user_id], references: [id])
+  vehicle    Vehicle       @relation(fields: [vehicle_id], references: [id])
+  user_id    String
+  user       User          @relation(fields: [user_id], references: [id])
   company_id String
-  company Company @relation(fields: [company_id], references: [id])
-  data Json?
-  created_at DateTime @default(now())
+  company    Company       @relation(fields: [company_id], references: [id])
+  data       Json?
+  created_at DateTime      @default(now())
 
   @@map("violation")
 }
@@ -90,108 +91,109 @@ enum ViolationType {
 }
 
 model LoginInformation {
-  id String @id @default(cuid())
-  user_id String
-  user User @relation(fields: [user_id], references: [id])
-  ip_address String
+  id                 String   @id @default(cuid())
+  user_id            String
+  user               User     @relation(fields: [user_id], references: [id])
+  ip_address         String
   device_information Json
-  created_at DateTime @default(now())
+  created_at         DateTime @default(now())
 
   @@map("login_information")
 }
 
 model Company {
-  id String @id @default(cuid())
-  name String
-  email String @unique
-  phone String
-  website String?
+  id               String      @id @default(cuid())
+  name             String
+  email            String      @unique
+  phone            String
+  website          String?
   physical_address String?
-  admins User[]
-  customers User[] @relation(name: "CompanyCustomer")
-  vehicles Vehicle[]
-  status Boolean @default(true)
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
-  violations Violation[]
+  admins           User[]
+  customers        User[]      @relation(name: "CompanyCustomer")
+  vehicles         Vehicle[]
+  status           Boolean     @default(true)
+  updated_at       DateTime    @updatedAt
+  created_at       DateTime    @default(now())
+  violations       Violation[]
 
   @@map("company")
 }
 
 model Vehicle {
-  id String @id @default(cuid())
-  number_plate String @unique
-  type String
-  user User[] // TODO: rename to Users
-  company_id String
-  company Company @relation(fields: [company_id], references: [id])
-  tracking_data TrackingData[]
-  geofence Geofence?
-  controller_command ControllerCommand[]
-  lock_engine_on_geofence_violation Boolean @default(false)
-  is_geofence_violation_alert_sent Boolean @default(false)
-  geofence_alert_recipients Json?
-  starting_mileage Float?
-  current_mileage Float?
-  modem_name String?
-  modem_info String?
-  last_seen DateTime? 
-  status Boolean @default(true)
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
-  violations Violation[]
-  route_id String?
-  route Route? @relation(fields: [route_id], references: [id])
-  sos_alerts SOSAlert[]
+  id                                String              @id @default(cuid())
+  number_plate                      String              @unique
+  type                              String
+  user                              User[] // TODO: rename to Users
+  company_id                        String
+  company                           Company             @relation(fields: [company_id], references: [id])
+  tracking_data                     TrackingData[]
+  geofence                          Geofence?
+  controller_command                ControllerCommand[]
+  lock_engine_on_geofence_violation Boolean             @default(false)
+  is_geofence_violation_alert_sent  Boolean             @default(false)
+  geofence_alert_recipients         Json?
+  starting_mileage                  Float?
+  current_mileage                   Float?
+  modem_name                        String?
+  modem_info                        String?
+  last_seen                         DateTime?
+  status                            Boolean             @default(true)
+  updated_at                        DateTime            @updatedAt
+  created_at                        DateTime            @default(now())
+  violations                        Violation[]
+  route_id                          String?
+  route                             Route?              @relation(fields: [route_id], references: [id])
+  tracker_sim_phone                 String? // SIM card phone number in GPS tracker (for airtime recharge)
+  sos_alerts                        SOSAlert[]
 
   @@map("vehicle")
 }
 
 model TrackingData {
-  id String @id @default(cuid())
-  vehicle_id String
-  vehicle Vehicle @relation(fields: [vehicle_id], references: [id])
-  geofence_id String?
-  route_id String?
-  route Route? @relation(fields: [route_id], references: [id])
-  geofence Geofence? @relation(fields: [geofence_id], references: [id])
+  id                       String                  @id @default(cuid())
+  vehicle_id               String
+  vehicle                  Vehicle                 @relation(fields: [vehicle_id], references: [id])
+  geofence_id              String?
+  route_id                 String?
+  route                    Route?                  @relation(fields: [route_id], references: [id])
+  geofence                 Geofence?               @relation(fields: [geofence_id], references: [id])
   geofence_violation_state GeofenceViolationState?
-  is_engine_locked Boolean @default(false)
-  ip_address String
-  public_ip_address String?
-  signal_strength Float
-  satellites Float
-  battery_percentage Float?
-  fuel_level Float?
-  mileage Float?
-  ignition Boolean?
-  hdop Float
-  lat Float
-  lon Float
-  age Float
-  time_from DateTime
-  time_to DateTime
-  altitude Float
-  course Float
-  speed Float
-  state TrackingDataState
-  ccid String?
-  imei String?
-  imsi String?
-  operator_name String?
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
+  is_engine_locked         Boolean                 @default(false)
+  ip_address               String
+  public_ip_address        String?
+  signal_strength          Float
+  satellites               Float
+  battery_percentage       Float?
+  fuel_level               Float?
+  mileage                  Float?
+  ignition                 Boolean?
+  hdop                     Float
+  lat                      Float
+  lon                      Float
+  age                      Float
+  time_from                DateTime
+  time_to                  DateTime
+  altitude                 Float
+  course                   Float
+  speed                    Float
+  state                    TrackingDataState
+  ccid                     String?
+  imei                     String?
+  imsi                     String?
+  operator_name            String?
+  updated_at               DateTime                @updatedAt
+  created_at               DateTime                @default(now())
 
   @@map("tracking_data")
 }
 
 model Route {
-  id String @id @default(cuid())
-  name String @unique
-  bounds Json
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  Vehicle Vehicle[]
+  id           String         @id @default(cuid())
+  name         String         @unique
+  bounds       Json
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+  Vehicle      Vehicle[]
   TrackingData TrackingData[]
 
   @@map("routes")
@@ -210,27 +212,27 @@ enum GeofenceViolationState {
 }
 
 model Geofence {
-  id String @id @default(cuid())
-  geometry Json
-  vehicle_id String @unique
-  vehicle Vehicle @relation(fields: [vehicle_id], references: [id])
+  id            String         @id @default(cuid())
+  geometry      Json
+  vehicle_id    String         @unique
+  vehicle       Vehicle        @relation(fields: [vehicle_id], references: [id])
   tracking_data TrackingData[]
-  created_at DateTime @default(now())
+  created_at    DateTime       @default(now())
 
   @@map("geofence")
 }
 
 model ControllerCommand {
-  id String @id @default(cuid())
-  code ControllerCommandCode
-  payload Json?
-  vehicle_id String
-  vehicle Vehicle @relation(fields: [vehicle_id], references: [id])
-  user_id String?
-  user User? @relation(fields: [user_id], references: [id])
-  is_executed Boolean @default(false)
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
+  id          String                @id @default(cuid())
+  code        ControllerCommandCode
+  payload     Json?
+  vehicle_id  String
+  vehicle     Vehicle               @relation(fields: [vehicle_id], references: [id])
+  user_id     String?
+  user        User?                 @relation(fields: [user_id], references: [id])
+  is_executed Boolean               @default(false)
+  updated_at  DateTime              @updatedAt
+  created_at  DateTime              @default(now())
 
   @@map("controller_command")
 }
@@ -244,12 +246,12 @@ enum ControllerCommandCode {
 }
 
 model Logs {
-  id String @id @default(cuid())
-  user_id String
-  user User @relation(fields: [user_id],references: [id])
-  action String
-  section  String
-  change String
+  id         String   @id @default(cuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  action     String
+  section    String
+  change     String
   updated_at DateTime @updatedAt
   created_at DateTime @default(now())
 
@@ -257,16 +259,16 @@ model Logs {
 }
 
 model SOSAlert {
-  id String @id @default(cuid())
-  vehicle_id String
-  vehicle Vehicle @relation(fields: [vehicle_id], references: [id])
-  user_id String
-  user User @relation(fields: [user_id], references: [id])
-  lat Float
-  lon Float
-  type SOSAlertType
-  help_dispatched Boolean @default(false)
-  created_at DateTime @default(now())
+  id              String       @id @default(cuid())
+  vehicle_id      String
+  vehicle         Vehicle      @relation(fields: [vehicle_id], references: [id])
+  user_id         String
+  user            User         @relation(fields: [user_id], references: [id])
+  lat             Float
+  lon             Float
+  type            SOSAlertType
+  help_dispatched Boolean      @default(false)
+  created_at      DateTime     @default(now())
 
   @@map("sos_alert")
 }

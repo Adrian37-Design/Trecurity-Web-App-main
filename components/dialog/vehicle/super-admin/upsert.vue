@@ -40,6 +40,11 @@
                         <label for="users">Owners</label>
                     </span>
                 </div>
+                <div class="col-md-12 mt-4">
+                    <label for="tracker_sim_phone" class="text-muted fs-2 mb-1 ms-2">Tracker SIM Phone</label>
+                    <InputText v-model="tracker_sim_phone" id="tracker_sim_phone" placeholder="+263712345678" type="tel" />
+                    <small class="text-muted ms-2">International format (+263...)</small>
+                </div>
                 <div v-if="current_data" class="col-md-12 mt-4">
                     <SelectButton id="status" v-model="status" :allow-empty="false" optionLabel="name" optionValue="value" :options="[{ name: 'ENABLE', value: true }, { name: 'DISABLE', value: false }]" class="float-end" aria-labelledby="basic" />
                 </div>
@@ -83,6 +88,7 @@
     const company_list = ref<any>([])
     const users = ref<User[]>(current_data?.user ?? [])
     const user_list = ref<any>([])
+    const tracker_sim_phone = ref<string>(current_data && 'tracker_sim_phone' in current_data ? (current_data as any).tracker_sim_phone || '' : '')
     const status = ref<boolean>(current_data?.status)
     const is_loading = ref<boolean>(false)
     const is_data_loading = ref(true);
@@ -109,12 +115,12 @@
 
             const [ get_company_list, get_user_list ] = await Promise.all([ _get_company_list, _get_user_list ])
 
-            if(get_company_list.success) {
-                company_list.value = get_company_list.data
+            if((get_company_list as any)?.success) {
+                company_list.value = (get_company_list as any).data
             }
 
-            if(get_user_list.success) {
-                user_list.value = get_user_list.data
+            if((get_user_list as any)?.success) {
+                user_list.value = (get_user_list as any).data
             }
         } catch (error) {
             console.error(error)   
@@ -133,6 +139,7 @@
                 type: type.value,
                 company: company.value,
                 users: users.value,
+                tracker_sim_phone: tracker_sim_phone.value,
                 status: status.value,
                 vehicle_id: current_data?.id,
                 user_id: user.value.id,
@@ -152,8 +159,15 @@
 
             if(success) {
                 toast.add({ severity: 'success', summary:  `${ current_data ? 'Update' : 'Create' } User`, detail: `The vehicle was successfully ${ current_data ? 'updated' : 'created' }`, life: 8000 })
-                emit('reloadTable', true)
-                $('.p-dialog-header-close').click()
+                
+                try {
+                    emit('reloadTable', true)
+                    $('.p-dialog-header-close').click()
+                } catch (e) {
+                    // Silently catch errors from emit/dialog close - these are non-critical
+                    console.log('Dialog close/emit error (non-critical):', e)
+                }
+                return; // Exit function after success to prevent outer catch from executing
             } else {
                 if(message?.toString().includes("<no response> Failed to fetch") || message?.toString().includes("net::ERR")) {
                     toast.add({ severity: 'warn', summary: 'Network Error', detail: 'Bad internet connection. Please check your internet connection and try again.', life: 8000})
