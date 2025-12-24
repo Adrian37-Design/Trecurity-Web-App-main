@@ -59,6 +59,7 @@ export default defineEventHandler(async (event) => {
                     type,
                     company_id: company.id,
                     tracker_sim_phone: tracker_sim_phone || null,
+                    tracker_serial_number: tracker_serial_number || null,
                     user: {
                         connect: [
                             ...users.map(({ id }) => {
