@@ -11,10 +11,10 @@ export default defineEventHandler(async (event) => {
         const body = await readBody(event);
 
         // Validate input
-        const bodySchema = z.object({ 
-            name: z.string(), 
-            email: z.string().email(), 
-            phone: z.string(), 
+        const bodySchema = z.object({
+            name: z.string(),
+            email: z.string().email(),
+            phone: z.string(),
             user_id: z.string().cuid(),
             token: z.string().regex(jwt_regex)
         });
@@ -23,28 +23,34 @@ export default defineEventHandler(async (event) => {
         const { user_id, company_id, name, email, phone, physical_address, website, status, initial_admin_name, initial_admin_surname, initial_admin_email, initial_admin_phone, token } = body;
 
         const validateBody = bodySchema.safeParse(body);
-        
+
         //Get env variables
         const JWT_APP_TOKEN_SECRET = process.env.NUXT_PUBLIC_JWT_APP_TOKEN_SECRET;
         const validateToken = await checkAppJwtToken(token, JWT_APP_TOKEN_SECRET, user_id);
 
-        if(!validateBody.success) {
+        if (!validateBody.success) {
             setResponseStatus(event, 401)
 
             return { data: {}, message: 'Input is in the wrong format', success: false }
         }
 
-        if(!validateToken.success) {
+        if (!validateToken.success) {
             setResponseStatus(event, 401)
 
             return { data: {}, message: 'Session is invalid', success: false }
         }
 
         // Check if this user has access to this endpoint
-        if(!await isAllowedOnEndpoint('SUPER_ADMIN', company_id, user_id)) return { data: {}, message: 'User does not have permission', success: false }
+        // SUPER_ADMIN can update any company, COMPANY_ADMIN can only update their own
+        const isSuperAdmin = await isAllowedOnEndpoint('SUPER_ADMIN', company_id, user_id);
+        const isCompanyAdmin = company_id ? await isAllowedOnEndpoint('COMPANY_ADMIN', company_id, user_id) : false;
+
+        if (!isSuperAdmin && !isCompanyAdmin) {
+            return { data: {}, message: 'User does not have permission', success: false };
+        }
 
         // Create new company 
-        if(!company_id) {
+        if (!company_id) {
             // Check if the company email already exists
             const _company = await prisma.company.count({
                 where: {
@@ -52,7 +58,7 @@ export default defineEventHandler(async (event) => {
                 }
             })
 
-            if(_company > 0) return { data: {}, message: "The email address that you entered for this company already exists with another company.", success: false }
+            if (_company > 0) return { data: {}, message: "The email address that you entered for this company already exists with another company.", success: false }
 
             // Check if initial_admin_user already exists
             const users = await prisma.user.count({
@@ -61,18 +67,18 @@ export default defineEventHandler(async (event) => {
                 }
             })
 
-            if(users > 0) return { data: {}, message: "The email address that you entered for this initial admin already exists with another user.", success: false }
+            if (users > 0) return { data: {}, message: "The email address that you entered for this initial admin already exists with another user.", success: false }
 
             // Generate a random password
             const password = createRandomString(16)
             const hash = await argon2.hash(password);
 
             // Console log the user password when Node env is in development
-            if(process.env.NODE_ENV === 'development') console.log(`Password: ${ password }`)
+            if (process.env.NODE_ENV === 'development') console.log(`Password: ${password}`)
 
             const company = await prisma.company.create({
                 data: {
-                    name, 
+                    name,
                     email,
                     phone,
                     physical_address,
@@ -91,10 +97,10 @@ export default defineEventHandler(async (event) => {
             })
 
             // Send email to user with the new login credentials
-            await sendWelcomeMessage(initial_admin_email, `${ initial_admin_name } ${ initial_admin_surname }`, initial_admin_email, password)
+            await sendWelcomeMessage(initial_admin_email, `${initial_admin_name} ${initial_admin_surname}`, initial_admin_email, password)
 
             // Created log
-            createLog('Create', user_id, 'Company', `Created company ${ name } (${ company.id })`)
+            createLog('Create', user_id, 'Company', `Created company ${name} (${company.id})`)
 
             return {
                 data: company,
@@ -119,7 +125,7 @@ export default defineEventHandler(async (event) => {
             })
 
             // Created log
-            createLog('Update', user_id, 'Company', `Updated company ${ name } (${ company.id })`)
+            createLog('Update', user_id, 'Company', `Updated company ${name} (${company.id})`)
 
             return {
                 data: company,
@@ -144,7 +150,7 @@ const createRandomString = (length: number) => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let result = "";
     for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
 }

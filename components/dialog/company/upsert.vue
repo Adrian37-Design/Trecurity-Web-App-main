@@ -65,7 +65,7 @@
                 </div>
             </div>
             <div class="mt-3">
-                <Button type="submit" :loading="is_loading" :label="current_data ? 'Update' : 'Create'" :class="{ 'p-button-secondary': !name || !email || !phone || !initial_admin_name || !initial_admin_surname || !initial_admin_email || !initial_admin_phone }" />
+                <Button type="submit" :loading="is_loading" :label="current_data ? 'Update' : 'Create'" :class="{ 'p-button-secondary': !name || !email || !phone || (!current_data && (!initial_admin_name || !initial_admin_surname || !initial_admin_email || !initial_admin_phone)) }" />
             </div>
         </div>
     </form>
