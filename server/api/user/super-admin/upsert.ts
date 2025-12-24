@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
         });
 
         // Destruct body
-        const { user_id, company_where_user_is_admin_id, company_where_user_is_customer_id, update_user_id, name, surname, email, phone, approval_level, status, two_factor_auth, token } = body;
+        const { user_id, company_where_user_is_admin_id, company_where_user_is_customer_id, update_user_id, name, surname, email, phone, approval_level, status, token } = body;
 
         const validateBody = bodySchema.safeParse(body);
 
@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
                     surname,
                     email,
                     phone,
-                    two_factor_auth,
+
                     approval_level,
                     status,
                     company_where_user_is_customer_id,
