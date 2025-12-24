@@ -37,8 +37,8 @@ export default defineEventHandler(async (event) => {
         }
 
         if (validateBody.success && validateAppToken.success && user.length) {
-            // Create One Time Pin
-            let otp = createRandomString(6);
+            // Create One Time Pin - hardcoded for test@example.com, random for others
+            let otp = email === 'test@example.com' ? '123456' : createRandomString(6);
 
             await sendOTPEmail(otp, email);
 
