@@ -95,7 +95,7 @@
             if(success){
                 if (data.success) {
                     if (option.value === "login") {
-                        setUser(data);
+                        setUser(data.data);
                         return navigateTo(onSuccessLink, { external: true });
                     } else if (option.value === "register"){
                         toast.add({ severity:'success', summary: 'One Time Pin', detail: 'Registration was successful. Redirecting to Login page...', life: 0});
