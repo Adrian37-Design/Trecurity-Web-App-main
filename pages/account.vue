@@ -139,9 +139,9 @@
 
                     if (success) {
 
-                        // Don't refresh user state here - it causes unwanted navigation
-                        // const { setUser } = useUser();
-                        // setUser(data);
+                        // Update user state to reflect account changes
+                        const { setUser } = useUser();
+                        setUser(data);
                         
                         toast.add({
                             severity:'warn',
