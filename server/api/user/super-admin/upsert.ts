@@ -81,7 +81,7 @@ export default defineEventHandler(async (event) => {
             console.log(`✅ User created: ${email} | Password: ${password}`);
 
             // Created log
-            createLog('Create', user_id, 'User', `Created user ${user.name} ${user.surname} (${user.email}) (${user.id})`)
+            await createLog('Create', user_id, 'User', `Created user ${user.name} ${user.surname} (${user.email}) (${user.id})`)
         } else {
             // If email is being updated, check if there is another user using it
             const user = await prisma.user.findUnique({
@@ -121,7 +121,7 @@ export default defineEventHandler(async (event) => {
             })
 
             // Created log
-            createLog('Update', user_id, 'User', `Updated user ${name} ${surname} (${email}) (${updatedUser.id})`)
+            await createLog('Update', user_id, 'User', `Updated user ${name} ${surname} (${email}) (${updatedUser.id})`)
         }
 
         return {
