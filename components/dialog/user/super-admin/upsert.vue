@@ -119,8 +119,8 @@
 
                 update_user_id: current_data?.id,
                 approval_level: approval_level.value,
-                company_where_user_is_admin_id: approval_level.value === 'COMPANY_ADMIN' ? company_where_user_is_admin.value.id : null,
-                company_where_user_is_customer_id: approval_level.value === 'USER' ? company_where_user_is_customer.value.id : null,
+                company_where_user_is_admin_id: approval_level.value === 'COMPANY_ADMIN' ? company_where_user_is_admin.value?.id : null,
+                company_where_user_is_customer_id: approval_level.value === 'USER' ? company_where_user_is_customer.value?.id : null,
                 user_id: user.value.id,
                 token: token.value 
             }
