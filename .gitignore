@@ -1,0 +1,64 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+
+# Node dependencies
+node_modules
+
+# Logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Prisma
+prisma/generated/*
+
+# Sentry Config File
+.env.sentry-build-plugin
+
+# Secrets
+ecosystem.config.cjs
+remote_ecosystem.config.cjs
+
+# Tokens / JWT test artifacts
+tokens.json
+paynow_response.json
+
+# Build & deploy archives (binary artifacts)
+*.tar.gz
+*.tar
+deploy_package.tar
+build.tar.gz
+
+# Windows PowerShell deployment scripts (contain server IPs)
+*.ps1
+
+# Sensitive debug/output files
+user_details.txt
+device_logs.txt
+fleet_status.txt
+debug_output.txt
+debug_logic_output.txt
+log_debug_output.txt
+ss_output.txt
+upsert_status.txt
+netstat.txt
+roles_log.txt
+upgrade_status.txt
+upgrade_log.txt
+pm2_list.txt
+pmap_server_out.log
+pmap_server_err.log
+start_logs.txt
+post_fix_logs.txt

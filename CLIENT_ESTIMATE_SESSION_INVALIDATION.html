@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Development Estimate - Real-Time Session Invalidation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .meta-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 0.85em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            border-left: 4px solid #764ba2;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 1.05em;
+        }
+
+        ul {
+            margin-left: 25px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin: 10px 0;
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .total-row {
+            font-weight: bold;
+            background: linear-gradient(to right, #f0f0f0, #e8e8e8);
+            font-size: 1.15em;
+        }
+
+        .total-row td {
+            color: #667eea;
+            padding: 18px 15px;
+        }
+
+        .feature-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .deliverable {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .deliverable-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .deliverable-desc {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .cost-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .cost-summary h3 {
+            color: white;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .cost-amount {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-top: 25px;
+            border-top: 2px solid #667eea;
+            text-align: center;
+        }
+
+        .company-name {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .meta-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <img src="file:///C:/Users/Takudzwa/Projects/Eugene/Company Logo.png" alt="Inferth Projects"
+                style="max-width: 250px; height: auto;">
+        </div>
+
+        <div class="header">
+            <h1>Development Estimate</h1>
+            <p class="subtitle">Real-Time Session Invalidation Feature</p>
+        </div>
+
+        <div class="meta-info">
+            <div class="meta-item">
+                <span class="meta-label">Date Prepared</span>
+                <span class="meta-value">December 29, 2025</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Project</span>
+                <span class="meta-value">Trecurity Platform</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Prepared By</span>
+                <span class="meta-value">Inferth Projects</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Status</span>
+                <span class="meta-value">Awaiting Approval</span>
+            </div>
+        </div>
+
+        <h2>Feature Overview</h2>
+        <p>Implementation of a real-time session management system that automatically terminates active user sessions
+            when their account or associated company is disabled by system administrators. This security enhancement
+            ensures immediate access revocation for disabled accounts.</p>
+
+        <div class="feature-box">
+            <h3 style="margin-top: 0; color: #2196F3;">Business Value</h3>
+            <ul>
+                <li><strong>Enhanced Security:</strong> Disabled users lose access immediately, even if currently logged
+                    in</li>
+                <li><strong>Compliance:</strong> Ensures prompt enforcement of access control policies</li>
+                <li><strong>Peace of Mind:</strong> Administrators can confidently disable accounts knowing sessions are
+                    terminated instantly</li>
+            </ul>
+        </div>
+
+        <h2>Deliverables</h2>
+
+        <div class="deliverable">
+            <div class="deliverable-title">1. Session Validation System</div>
+            <div class="deliverable-desc">Server-side validation mechanism to verify user account status on each
+                request, automatically terminating sessions for disabled accounts.</div>
+        </div>
+
+        <div class="deliverable">
+            <div class="deliverable-title">2. Automatic Logout Mechanism</div>
+            <div class="deliverable-desc">Seamless user experience that gracefully handles session termination and
+                redirects disabled users to login page with appropriate messaging.</div>
+        </div>
+
+        <div class="deliverable">
+            <div class="deliverable-title">3. Multi-Device Support</div>
+            <div class="deliverable-desc">Solution works across all active sessions and devices simultaneously, ensuring
+                complete access revocation.</div>
+        </div>
+
+        <div class="deliverable">
+            <div class="deliverable-title">4. Testing & Quality Assurance</div>
+            <div class="deliverable-desc">Comprehensive testing across various scenarios including user disabling,
+                company disabling, and multiple concurrent sessions.</div>
+        </div>
+
+        <div class="deliverable">
+            <div class="deliverable-title">5. Documentation</div>
+            <div class="deliverable-desc">Technical documentation for future maintenance and administrator guidelines
+                for the new functionality.</div>
+        </div>
+
+        <h2>Development Timeline</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Phase</th>
+                    <th>Duration</th>
+                    <th>Deliverable</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Development</strong></td>
+                    <td>2.5 hours</td>
+                    <td>Core functionality implementation</td>
+                </tr>
+                <tr>
+                    <td><strong>Testing</strong></td>
+                    <td>1.0 hour</td>
+                    <td>Quality assurance across scenarios</td>
+                </tr>
+                <tr>
+                    <td><strong>Documentation</strong></td>
+                    <td>0.5 hours</td>
+                    <td>Technical & user documentation</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Total Development Time</strong></td>
+                    <td><strong>4.0 hours</strong></td>
+                    <td>Ready for deployment</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="cost-summary">
+            <h3>Investment Required</h3>
+            <div class="cost-amount">$100.00 USD</div>
+            <p style="color: #fff; opacity: 0.9; font-size: 1.05em;">Fixed price for complete implementation</p>
+        </div>
+
+        <h2>Technical Specifications</h2>
+        <p><strong>Implementation Approach:</strong> Server-side validation layer that maintains security without
+            impacting user experience for active sessions.</p>
+
+        <p><strong>Performance:</strong> Minimal overhead with optional caching mechanism to ensure response times
+            remain optimal.</p>
+
+        <p><strong>Compatibility:</strong> Fully compatible with existing authentication system and requires no changes
+            to client applications.</p>
+
+        <h2>Terms & Conditions</h2>
+        <ul>
+            <li>Estimate valid for 30 days from date of preparation</li>
+            <li>Payment terms: 50% deposit, 50% upon completion</li>
+            <li>Estimated completion: Within 2 business days of project commencement</li>
+            <li>Includes 30-day warranty for bug fixes</li>
+        </ul>
+
+        <footer>
+            <p class="company-name">Inferth Projects</p>
+            <p style="color: #666; margin-top: 10px;">Professional Software Development Services</p>
+            <div class="status-badge">Awaiting Client Approval</div>
+        </footer>
+    </div>
+</body>
+
+</html>

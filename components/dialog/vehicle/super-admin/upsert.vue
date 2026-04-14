@@ -1,0 +1,222 @@
+<template>
+    <form @submit.prevent="upsert()">
+        <div v-if="is_data_loading" class="d-flex">
+            <div class="m-auto">Loading...</div>
+        </div>
+        <div v-else class="row">
+            <div class="form-group row">
+                <div class="col-md-6">
+                    <label for="number_plate" class="text-muted fs-2 mb-1 ms-2">Number Plate</label>
+                    <InputText v-model="number_plate" required />
+                </div>
+                <div class="col-md-6 mt-4">
+                    <span class="p-float-label">
+                        <Dropdown inputId="vehicle_type" v-model="type" style="width: 93%;" optionLabel="name" optionValue="name" :options="type_list" filter placeholder="Choose Vehicle Type">
+                            <template #option="slotProps">
+                                <div style="width: 100%;" class="d-flex justify-content-between">
+                                    <div>{{ slotProps.option.name }}</div>
+                                    <span>
+                                        <i style="color: #10b981;" class="fs-6 text-primary" :class="slotProps.option.icon"></i>
+                                    </span>
+                                </div>
+                            </template> 
+                        </Dropdown>
+                        <label for="vehicle_type">Vehicle Type</label>
+                    </span>
+                </div>
+                <div class="col-md-12 mt-4">
+                    <span class="p-float-label">
+                        <Dropdown v-model="company" :options="company_list" chip filter optionLabel="name" :virtualScrollerOptions="{ itemSize: 38 }" placeholder="Select a Company" />
+                        <label for="surname">Company</label>
+                    </span>
+                </div>
+                <div class="col-md-12 mt-4">
+                    <span class="p-float-label">
+                        <MultiSelect v-model="users" :options="user_list" optionLabel="full_name" display="chip" filter :filterFields="[ 'name', 'surname', 'email' ]" :virtualScrollerOptions="{ itemSize: 38 }" placeholder="Select Users" class="w-full md:w-20rem">
+                            <template #option="slotProps">
+                                <div>{{ slotProps.option.name }} {{ slotProps.option.surname }} ({{ slotProps.option.email }})</div>
+                            </template>
+                        </MultiSelect>
+                        <label for="users">Owners</label>
+                    </span>
+                </div>
+                <div class="col-md-12 mt-4">
+                    <label for="tracker_sim_phone" class="text-muted fs-2 mb-1 ms-2">Tracker SIM Phone</label>
+                    <InputText v-model="tracker_sim_phone" id="tracker_sim_phone" placeholder="+263712345678" type="tel" />
+                    <small class="text-muted ms-2">International format (+263...)</small>
+                </div>
+                <div class="col-md-12 mt-4">
+                    <label for="tracker_serial_number" class="text-muted fs-2 mb-1 ms-2">Tracker Serial Number / IMEI</label>
+                    <InputText v-model="tracker_serial_number" id="tracker_serial_number" placeholder="Enter device serial number or IMEI" />
+                    <small class="text-muted ms-2">GPS tracker device identifier</small>
+                </div>
+
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+                <Button type="submit" :loading="is_loading" :label="current_data ? 'Update' : 'Create'" :class="{ 'p-button-secondary': !number_plate || !type || !company || users.length === 0 }" />
+            </div>
+        </div>
+    </form>
+</template>
+
+<script setup lang="ts">
+    import { useToast } from 'primevue/usetoast'
+    import $ from "jquery"
+    import { type User, type Vehicle, type Company } from '@prisma/client'
+
+    const toast = useToast();
+    
+    const token = useCookie('token')
+    const { user } = useUser();
+
+    const { current_data } = defineProps<{
+        current_data?: Vehicle & { company: Company, user: User[] }
+    }>()
+
+    const emit = defineEmits(['reloadTable'])
+
+    const number_plate = ref<string>(current_data?.number_plate)
+    const type = ref<string>(current_data?.type)
+    const type_list = ref<any>([
+        { name: "MOTORBIKE", icon: "ti ti-motorbike" },
+        { name: "CAR", icon: "ti ti-car" },
+        { name: "TRUCK", icon: "ti ti-truck" },
+        { name: "TRACTOR", icon: "ti ti-tractor" },
+        { name: "FORKLIFT", icon: "ti ti-forklift" },
+        { name: "EXCAVATOR", icon: "ti ti-backhoe" },
+        { name: "BULLDOZER", icon: "ti ti-bulldozer" },
+        { name: "BUS", icon: "ti ti-bus" }
+    ])
+    const company = ref<Company>(current_data?.company)
+    const company_list = ref<any>([])
+    const users = ref<any[]>(current_data?.user ?? [])
+    const user_list = ref<any>([])
+    const tracker_sim_phone = ref<string>(current_data && 'tracker_sim_phone' in current_data ? (current_data as any).tracker_sim_phone || '' : '')
+    const tracker_serial_number = ref<string>(current_data && 'tracker_serial_number' in current_data ? (current_data as any).tracker_serial_number || '' : '')
+    const status = ref<boolean>(current_data?.status ?? true)
+    const is_loading = ref<boolean>(false)
+    const is_data_loading = ref(true);
+
+    onMounted(async () => {
+        try {
+            // Get Company list
+            const _get_company_list = $fetch('/api/company/list', {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: user.value.id,
+                    token: token.value
+                })
+            })
+
+            // Get User List
+            const _get_user_list = $fetch('/api/user/super-admin/list', {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: user.value.id,
+                    token: token.value
+                })
+            })
+
+            const [ get_company_list, get_user_list ] = await Promise.all([ _get_company_list, _get_user_list ])
+
+            if((get_company_list as any)?.success) {
+                company_list.value = (get_company_list as any).data
+            }
+
+            if((get_user_list as any)?.success) {
+                // Map list to include full_name
+                user_list.value = (get_user_list as any).data.map((u: any) => ({
+                    ...u,
+                    full_name: `${u.name} ${u.surname}`
+                }))
+
+                // Sync selected users with the new list to ensure display works
+                if (users.value.length > 0) {
+                    const selectedIds = new Set(users.value.map((u: any) => u.id));
+                    users.value = user_list.value.filter((u: any) => selectedIds.has(u.id));
+                }
+            }
+        } catch (error) {
+            console.error(error)   
+        }
+        finally {
+            is_data_loading.value = false
+        }
+    })
+    
+    const upsert = async () => {
+        try {
+            // Frontend Validation
+            if (!number_plate.value) {
+                toast.add({ severity: 'warn', summary: 'Input Required', detail: 'Please enter a Number Plate.', life: 5000 });
+                return;
+            }
+            if (!type.value) {
+                toast.add({ severity: 'warn', summary: 'Input Required', detail: 'Please select a Vehicle Type.', life: 5000 });
+                return;
+            }
+            if (!company.value) {
+                toast.add({ severity: 'warn', summary: 'Input Required', detail: 'Please select a Company.', life: 5000 });
+                return;
+            }
+            if (!users.value || users.value.length === 0) {
+                toast.add({ severity: 'warn', summary: 'Input Required', detail: 'Please select at least one Owner.', life: 5000 });
+                return;
+            }
+
+            is_loading.value = true
+
+            const details = {
+                number_plate: number_plate.value.toUpperCase().trim(),
+                type: type.value,
+                company: company.value,
+                users: users.value,
+                tracker_sim_phone: tracker_sim_phone.value,
+                tracker_serial_number: tracker_serial_number.value,
+                status: status.value,
+                vehicle_id: current_data?.id,
+                user_id: user.value.id,
+                token: token.value 
+            }
+
+            const { message, success } = await $fetch('/api/vehicle/super-admin/upsert', {
+                method: 'POST',
+                body: JSON.stringify(details)
+            })
+            .catch(error => {
+                return {
+                    message: error,
+                    success: false
+                }
+            })
+
+            if(success) {
+                toast.add({ severity: 'success', summary:  `${ current_data ? 'Update' : 'Create' } User`, detail: `The vehicle was successfully ${ current_data ? 'updated' : 'created' }`, life: 8000 })
+                
+                try {
+                    emit('reloadTable', true)
+                    $('.p-dialog-header-close').click()
+                } catch (e) {
+                    // Silently catch errors from emit/dialog close - these are non-critical
+                    console.log('Dialog close/emit error (non-critical):', e)
+                }
+                return; // Exit function after success to prevent outer catch from executing
+            } else {
+                if(message?.toString().includes("<no response> Failed to fetch") || message?.toString().includes("net::ERR")) {
+                    toast.add({ severity: 'warn', summary: 'Network Error', detail: 'Bad internet connection. Please check your internet connection and try again.', life: 8000})
+                } else {
+                    toast.add({ severity: 'warn', summary: 'App Error', detail: message || "An internal application error has occurred. Please try to refresh your page and start again.", life: 8000})
+                }
+            }
+        } catch (error) {
+            console.error(error)
+            toast.add({ severity: 'warn', summary: 'Connection Error', detail: "An error has occurred trying to connect. Please check your internet connection and try again.", life: 8000 })
+        } finally {
+            is_loading.value = false
+        }
+    }
+</script>
+
+<style>
+
+</style>
